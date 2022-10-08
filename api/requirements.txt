@@ -3,7 +3,7 @@ beautifulsoup4==4.11.1
 conceptnet_lite==0.1.27
 fake_useragent==0.1.11
 fastapi==0.85.0
-gensim==3.8.3
+gensim
 hyperopt==0.2.7
 joblib==1.1.0
 keybert==0.6.0
