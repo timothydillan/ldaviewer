@@ -5,10 +5,10 @@ from fastapi import FastAPI, Path, Query, Response, status
 from pydantic import BaseModel
 from enum import Enum
 from fastapi.middleware.cors import CORSMiddleware
-import api.papersearch.models as papersearch_models
-import api.papersearch.service as papersearch_service
-import api.lda.service as lda_service
-import api.database.service as database_service
+import papersearch.models as papersearch_models
+import papersearch.service as papersearch_service
+import lda.service as lda_service
+import database.service as database_service
 
 
 class ModelName(str, Enum):

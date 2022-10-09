@@ -27,3 +27,5 @@ selenium==4.5.0
 spacy==3.4.0
 webdriver_manager==3.5.2
 wikipedia==1.4.0
+gunicorn
+uvicorn
