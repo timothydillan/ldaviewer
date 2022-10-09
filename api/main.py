@@ -10,13 +10,6 @@ import papersearch.service as papersearch_service
 import lda.service as lda_service
 import database.service as database_service
 
-
-class ModelName(str, Enum):
-    alexnet = "alexnet"
-    resnet = "resnet"
-    lenet = "lenet"
-
-
 # Run with uvicron filename:instancename --reload (--reload for hotreload)
 app = FastAPI()
 app.add_middleware(
@@ -30,7 +23,7 @@ app.add_middleware(
 
 @app.get("/")
 async def root():
-    return {"message": "Hello World no no no"}
+    return {"message": "Hey! You've reached the LDAViewer API. Take a look at the /docs."}
 
 
 @app.post("/search")
@@ -116,14 +109,3 @@ async def get_specific_search_result(id: int, divide_n: Optional[int] = None, re
             result["extracted_topics_over_time"])
 
     return {"status": "success", "result": result}
-
-
-@app.get("/models/{model_name}")
-async def get_model(model_name: ModelName):
-    if model_name is ModelName.alexnet:
-        return {"model_name": model_name, "message": "Deep Learning FTW!"}
-
-    if model_name.value == "lenet":
-        return {"model_name": model_name, "message": "LeCNN all the images"}
-
-    return {"model_name": model_name, "message": "Have some residuals"}
