@@ -2,8 +2,8 @@
 import dateutil.parser as dateparser
 from datetime import datetime, tzinfo
 import wikipedia
-from conceptnet_lite import Label, edges_between
-import conceptnet_lite
+# from conceptnet_lite import Label, edges_between
+# import conceptnet_lite
 from keybert import KeyBERT
 import time
 import optuna
@@ -417,8 +417,8 @@ class LDALabeler:
         self.keybert_model = KeyBERT()
         self.verbose = verbose
         # Initialize ConceptNet database
-        conceptnet_lite.connect(
-            "/Users/timothy.dillan/Downloads/conceptnet.db")
+        # conceptnet_lite.connect(
+        #     "/Users/timothy.dillan/Downloads/conceptnet.db")
         self.topic_keyphrases = {}
 
     def __validate_topic_keyphrases(self):
@@ -439,58 +439,58 @@ class LDALabeler:
             print("Extracted keyphrases:", self.topic_keyphrases)
         self.topic_keyphrases = keybert_topic_keypharses
 
-    def filter_topic_keyphrases_by_conceptnet(self):
-        self.__validate_topic_keyphrases()
-        filtered_keyphrases = {}
-        # For each keyphrase that we'd like to verify (whether its a concept or not)
-        for topic_index, keyphrases_and_weights in self.topic_keyphrases.items():
-            filtered_keyphrases[topic_index] = []
-            for keyphrase_and_weight in keyphrases_and_weights:
-                keyphrase = keyphrase_and_weight[0]
-                weight = keyphrase_and_weight[1]
-                # Reformat the keyphrase (if it has more than one word) into ConceptNet acceptable format.
-                if len(keyphrase.split()) > 1:
-                    new_keyphrase = "_".join(keyphrase.split())
-                # Try to check the concept from the keyphrase.
-                try:
-                    # If it does exist, add the keyphrase.
-                    concepts = Label.get(text=new_keyphrase).concepts
-                    filtered_keyphrases[topic_index].append(
-                        (keyphrase.capitalize(), weight))
-                except:
-                    # Else, if it doesn't and the keyphrase only contains one word, no concept was found.
-                    if len(keyphrase.split()) < 2:
-                        print("No concept found for", keyphrase)
-                        continue
+    # def filter_topic_keyphrases_by_conceptnet(self):
+    #     self.__validate_topic_keyphrases()
+    #     filtered_keyphrases = {}
+    #     # For each keyphrase that we'd like to verify (whether its a concept or not)
+    #     for topic_index, keyphrases_and_weights in self.topic_keyphrases.items():
+    #         filtered_keyphrases[topic_index] = []
+    #         for keyphrase_and_weight in keyphrases_and_weights:
+    #             keyphrase = keyphrase_and_weight[0]
+    #             weight = keyphrase_and_weight[1]
+    #             # Reformat the keyphrase (if it has more than one word) into ConceptNet acceptable format.
+    #             if len(keyphrase.split()) > 1:
+    #                 new_keyphrase = "_".join(keyphrase.split())
+    #             # Try to check the concept from the keyphrase.
+    #             try:
+    #                 # If it does exist, add the keyphrase.
+    #                 concepts = Label.get(text=new_keyphrase).concepts
+    #                 filtered_keyphrases[topic_index].append(
+    #                     (keyphrase.capitalize(), weight))
+    #             except:
+    #                 # Else, if it doesn't and the keyphrase only contains one word, no concept was found.
+    #                 if len(keyphrase.split()) < 2:
+    #                     print("No concept found for", keyphrase)
+    #                     continue
 
-                    # Else, for every possible n-gram combination from 2 - len(keyphrase), check every possible n-gram combination to ConceptNet
-                    # and repeat the previous process.
-                    start = 2
-                    end = len(keyphrase.split())
-                    if len(keyphrase.split()) > 2:
-                        end -= 1
+    #                 # Else, for every possible n-gram combination from 2 - len(keyphrase), check every possible n-gram combination to ConceptNet
+    #                 # and repeat the previous process.
+    #                 start = 2
+    #                 end = len(keyphrase.split())
+    #                 if len(keyphrase.split()) > 2:
+    #                     end -= 1
 
-                    for split in range(start, end+1):
-                        for ngram in itertools.permutations(keyphrase.split(), split):
-                            new_keyphrase = "_".join(ngram)
-                            try:
-                                concepts = Label.get(
-                                    text=new_keyphrase).concepts
-                                new_formatted_keyphrase = " ".join(
-                                    ngram).capitalize()
-                                filtered_keyphrases[topic_index].append(
-                                    (new_formatted_keyphrase, weight))
-                            except:
-                                print("No concept found for", new_keyphrase)
+    #                 for split in range(start, end+1):
+    #                     for ngram in itertools.permutations(keyphrase.split(), split):
+    #                         new_keyphrase = "_".join(ngram)
+    #                         try:
+    #                             concepts = Label.get(
+    #                                 text=new_keyphrase).concepts
+    #                             new_formatted_keyphrase = " ".join(
+    #                                 ngram).capitalize()
+    #                             filtered_keyphrases[topic_index].append(
+    #                                 (new_formatted_keyphrase, weight))
+    #                         except:
+    #                             print("No concept found for", new_keyphrase)
 
-            # If the filtration resulted in 0 results, then fallback to default keyphrases and weights.
-            if len(filtered_keyphrases[topic_index]) <= 0:
-                if self.verbose:
-                    print(
-                        f"No concepts were found for all the keyphrases provided in topic {topic_index}. Returning the provided keyphrases instead.")
-                filtered_keyphrases[topic_index] = keyphrases_and_weights
+    #         # If the filtration resulted in 0 results, then fallback to default keyphrases and weights.
+    #         if len(filtered_keyphrases[topic_index]) <= 0:
+    #             if self.verbose:
+    #                 print(
+    #                     f"No concepts were found for all the keyphrases provided in topic {topic_index}. Returning the provided keyphrases instead.")
+    #             filtered_keyphrases[topic_index] = keyphrases_and_weights
 
-        self.topic_keyphrases = filtered_keyphrases
+    #     self.topic_keyphrases = filtered_keyphrases
 
     def filter_topic_keyphrases_by_wikipedia(self):
         self.__validate_topic_keyphrases()
