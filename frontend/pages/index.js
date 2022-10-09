@@ -255,7 +255,7 @@ export default function Home() {
 
   async function getSearchResultsHistory() {
     // Send the form data to our API and get a response.
-    const response = await fetch('http://128.199.138.126/search_results', {
+    const response = await fetch('https://128.199.138.126/search_results', {
       // The method is POST because we are sending data.
       method: 'GET',
     }).then(res => {
@@ -283,7 +283,7 @@ export default function Home() {
   }
 
   async function viewSpecificSearchResult(id, divide_n = null) {
-    let url = `http://128.199.138.126/search_result/${id}`
+    let url = `https://128.199.138.126/search_result/${id}`
     if (divide_n != null) {
       url += `?divide_n=${divide_n}`
     }
@@ -365,7 +365,7 @@ export default function Home() {
     const JSONdata = JSON.stringify(data)
 
     // Send the form data to our API and get a response.
-    const response = await fetch('http://128.199.138.126/search', {
+    const response = await fetch('https://128.199.138.126/search', {
       // Body of the request is the JSON data we created above.
       body: JSONdata,
 
