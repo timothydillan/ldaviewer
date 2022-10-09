@@ -21,7 +21,7 @@ def __get_db():
     if db:
         return db
     db = mysql.connector.connect(
-        host="localhost", user="root", password="tim101175", database="lda_thesis_db")
+        host="localhost", user="root", password="tim101175", database="Ldathesis123*")
     if db.is_connected():
         return db
     raise Exception("failed to connect to database!")

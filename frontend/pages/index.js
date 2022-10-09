@@ -255,7 +255,7 @@ export default function Home() {
 
   async function getSearchResultsHistory() {
     // Send the form data to our API and get a response.
-    const response = await fetch('http://localhost:8000/search_results', {
+    const response = await fetch('http://128.199.138.126/search_results', {
       // The method is POST because we are sending data.
       method: 'GET',
     }).then(res => {
@@ -283,7 +283,7 @@ export default function Home() {
   }
 
   async function viewSpecificSearchResult(id, divide_n = null) {
-    let url = `http://localhost:8000/search_result/${id}`
+    let url = `http://128.199.138.126/search_result/${id}`
     if (divide_n != null) {
       url += `?divide_n=${divide_n}`
     }
@@ -320,8 +320,6 @@ export default function Home() {
     showSnackbarMessage("Success!", "success")
     setCurrentSearchQuery(decodeURI(result.result.search_query))
     setScrapedData(result.result)
-    console.log(parseTopicsOverTimeChartJSResponse(result.result.extracted_topics_over_time))
-    // parseTopicsOverTimeResponse()
   }
 
   async function getLDAResultsFromSearchQuery(searchQuery) {
@@ -367,7 +365,7 @@ export default function Home() {
     const JSONdata = JSON.stringify(data)
 
     // Send the form data to our API and get a response.
-    const response = await fetch('http://localhost:8000/search', {
+    const response = await fetch('http://128.199.138.126/search', {
       // Body of the request is the JSON data we created above.
       body: JSONdata,
 
@@ -482,7 +480,7 @@ export default function Home() {
       <BackdropProgress open={loadingState}></BackdropProgress>
       <main>
         <h1 className="title">
-          Welcome to <Link href="/dashboard/Dashboard">LDAViewer!</Link>
+          Welcome to <Link href="#">LDAViewer!</Link>
         </h1>
         <p className="description">
           Get started by searching your topic of interest!
