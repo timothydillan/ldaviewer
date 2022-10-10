@@ -1,11 +1,16 @@
 from . import database
 
+
 def store_search_results(search_query, document_df, topics_and_weights, topics_over_time, metadata):
-    return database.insert_data_to_search_results(search_query, document_df, topics_and_weights, topics_over_time, metadata)
+    success = database.insert_data_to_search_results(
+        search_query, document_df, topics_and_weights, topics_over_time, metadata)
+    database.close_db_and_cursor()
+    return success
 
 
 def get_general_search_results():
     results = database.get_search_results()
+    database.close_db_and_cursor()
     if results:
         return [construct_search_results_response(result) for result in results]
     return None
@@ -13,9 +18,11 @@ def get_general_search_results():
 
 def get_specific_search_result(id):
     result = database.get_specific_search_result(id)
+    database.close_db_and_cursor()
     if result:
         return construct_specific_search_result_response(result)
     return None
+
 
 def construct_specific_search_result_response(response):
     id = response[0]
