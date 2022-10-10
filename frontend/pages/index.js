@@ -554,9 +554,9 @@ export default function Home() {
           </>}
         {scrapedData != null &&
           <>
-            <Typography variant="h3" mt={2}>Overall Topic Distribution</Typography>
+          <Typography variant="h3" mt={2}>LDA results for <strong>{currentSearchQuery}</strong></Typography>
             <Box>
-              <Typography variant="h5" mt={2}>LDA results for {currentSearchQuery}</Typography>
+            <Typography variant="h5" mt={2} textAlign={"center"}>Overall Topic Distribution</Typography>
               <CirclePacking
                 {...commonProperties}
                 margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
