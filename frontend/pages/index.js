@@ -2,28 +2,13 @@ import Head from 'next/head'
 import * as React from 'react';
 import Button from '@mui/material/Button';
 import SearchBar from './../components/searchbar'
-import BarChart from './../components/barchart';
-import BubbleChart from './../components/bubblechart';
 import Paper from '@mui/material/Paper';
-import InputBase from '@mui/material/InputBase';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
-import SearchIcon from '@mui/icons-material/Search';
-import DirectionsIcon from '@mui/icons-material/Directions';
 import Link from 'next/link';
-import * as d3 from "d3";
 import BackdropProgress from '../components/backdropload';
-import { ResponsiveCirclePacking } from '@nivo/circle-packing'
-import { CirclePacking, CirclePackingHtml } from '@nivo/circle-packing'
+import { CirclePacking } from '@nivo/circle-packing'
 import Box from '@mui/material/Box';
 import Slider from '@mui/material/Slider';
 import TextField from '@mui/material/TextField';
-import Autocomplete from '@mui/material/Autocomplete';
-import Checkbox from '@mui/material/Checkbox';
-import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
-import CheckBoxIcon from '@mui/icons-material/CheckBox';
-import { styled } from '@mui/material/styles';
 import Grid from '@mui/material/Grid';
 import { Typography } from '@mui/material';
 import InputLabel from '@mui/material/InputLabel';
@@ -36,8 +21,6 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import Chip from '@mui/material/Chip';
 import Snackbar from '@mui/material/Snackbar';
 import MuiAlert from '@mui/material/Alert';
-import { ResponsiveLine, Line } from '@nivo/line'
-import { DataGrid } from '@mui/x-data-grid'
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -74,7 +57,7 @@ const lineoptions = {
     },
     title: {
       display: true,
-      text: 'Topic Distribution over Time',
+      text: 'Topic Frequency over Time',
       font: {
         size: 18
       }
@@ -246,7 +229,7 @@ export default function Home() {
   const [advancedMenuOpen, setAdvancedMenuOpen] = React.useState(false);
   const [retrievalLimit, setRetrievalLimit] = React.useState(100);
   const [selectedAcademicDatabases, setSelectedAcademicDatabases] = React.useState([]);
-  const [searchResultsHistory, setSearchResultsHistory] = React.useState([])
+  const [searchResultsHistory, setSearchResultsHistory] = React.useState(null)
   const [nInterval, setNInterval] = React.useState(5);
 
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
@@ -467,11 +450,6 @@ export default function Home() {
           href="https://fonts.googleapis.com/icon?family=Material+Icons"
         />
       </Head>
-      {/* <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
-        <Alert onClose={handleClose} severity="success" sx={{ width: '100%' }}>
-          This is a success message!
-        </Alert>
-      </Snackbar> */}
       <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={handleSnackbarClose}>
         <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
           {snackbarMessage}
@@ -574,28 +552,11 @@ export default function Home() {
               </Grid>
             </Grid>
           </>}
-        {/* <CirclePacking
-          {...commonProperties}
-          data={trydata}
-          enableLabels={true}
-          labelsSkipRadius={16}
-          labelsFilter={label => label.node.depth >= zoomedDepth}
-          labelTextColor={{
-            from: 'color',
-            modifiers: [['darker', 2]],
-          }}
-          animate={true}
-          zoomedId={zoomedId}
-          motionConfig="slow"
-          onClick={node => {
-            setZoomedId(zoomedId === node.id ? null : node.id)
-            setZoomedDepth(node.depth)
-          }}
-        /> */}
         {scrapedData != null &&
           <>
+            <Typography variant="h3" mt={2}>Overall Topic Distribution</Typography>
             <Box>
-              <Typography variant="h4" mt={2}>LDA results for {currentSearchQuery}</Typography>
+              <Typography variant="h5" mt={2}>LDA results for {currentSearchQuery}</Typography>
               <CirclePacking
                 {...commonProperties}
                 margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
@@ -698,46 +659,7 @@ export default function Home() {
               </TableContainer>
             </Box>
           </>}
-        {/* <Line
-          {...commonPropertiesLine}
-          yScale={{
-            type: 'linear',
-            stacked: true,
-          }}
-          data={parseTopicsOverTimeResponse(scrapedData.extracted_topics_over_time)}
-          enableSlices={true}
-          curve={'linear'}
-        /> */}
-        {/* <div style={{ width: 500, height: 500, margin: "auto" }}>
-          <ResponsiveCirclePacking
-            data={data1}
-            margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-            identity="id"
-            value="loc"
-            colors={{ scheme: "nivo" }}
-            padding={6}
-            labelTextColor={{ from: "color", modifiers: [["darker", 0.8]] }}
-            borderWidth={2}
-            skipLibCheck={true}
-            borderColor={{ from: "color" }}
-            defs={[
-              {
-                id: "lines",
-                type: "patternLines",
-                background: "none",
-                color: "inherit",
-                rotation: -45,
-                lineWidth: 5,
-                spacing: 8
-              }
-            ]}
-            fill={[{ match: { depth: 1 }, id: "lines" }]}
-            animate={true}
-            motionStiffness={90}
-            motionDamping={12}
-          />
-        </div> */}
-        <div className="grid">
+        {/* <div className="grid">
           <a href="https://nextjs.org/docs" className="card">
             <h3>Documentation &rarr;</h3>
             <p>Find in-depth information about Next.js features and API.</p>
@@ -765,7 +687,7 @@ export default function Home() {
               Instantly deploy your Next.js site to a public URL with Vercel.
             </p>
           </a>
-        </div>
+        </div> */}
       </main>
 
       <footer>
@@ -774,8 +696,7 @@ export default function Home() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel" className="logo" />
+          A Thesis Project Supported By {' '}<img src="/uiilogo.png" alt="Vercel" className="logo" />
         </a>
       </footer>
 
@@ -899,7 +820,7 @@ export default function Home() {
         }
 
         .logo {
-          height: 1em;
+          height: 2em;
         }
 
         @media (max-width: 600px) {
@@ -927,71 +848,3 @@ export default function Home() {
     </div>
   )
 }
-
-const MyResponsiveLine = ({ data /* see data tab */ }) => (
-  <ResponsiveLine
-    data={data}
-    margin={{ top: 50, right: 250, bottom: 50, left: 60 }}
-    xScale={{ type: 'point' }}
-    yScale={{
-      type: 'linear',
-      min: 'auto',
-      max: 'auto',
-    }}
-    axisTop={null}
-    axisRight={null}
-    axisBottom={{
-      orient: 'bottom',
-      tickSize: 5,
-      tickPadding: 5,
-      tickRotation: 0,
-      legend: 'Time',
-      legendOffset: 36,
-      legendPosition: 'middle'
-    }}
-    axisLeft={{
-      orient: 'left',
-      tickSize: 5,
-      tickPadding: 5,
-      tickRotation: 0,
-      legend: 'Document Frequency',
-      legendOffset: -40,
-      legendPosition: 'middle'
-    }}
-    pointSize={10}
-    pointColor={{ theme: 'background' }}
-    pointBorderWidth={2}
-    pointBorderColor={{ from: 'serieColor' }}
-    pointLabelYOffset={-12}
-    enableSlices="x"
-    colors={{ scheme: 'nivo' }}
-    useMesh={true}
-    animate={true}
-    legends={[
-      {
-        anchor: 'bottom-right',
-        direction: 'column',
-        justify: false,
-        translateX: 100,
-        translateY: 0,
-        itemsSpacing: 0,
-        itemDirection: 'left-to-right',
-        itemWidth: 80,
-        itemHeight: 20,
-        itemOpacity: 0.75,
-        symbolSize: 12,
-        symbolShape: 'circle',
-        symbolBorderColor: 'rgba(0, 0, 0, .5)',
-        effects: [
-          {
-            on: 'hover',
-            style: {
-              itemBackground: 'rgba(0, 0, 0, .03)',
-              itemOpacity: 1
-            }
-          }
-        ]
-      }
-    ]}
-  />
-)
