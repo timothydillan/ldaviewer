@@ -461,7 +461,7 @@ export default function Home() {
           Welcome to <Link href="#">LDAViewer!</Link>
         </h1>
         <p className="description">
-          Get started by searching your topic of interest!
+          Get started by searching your topic of interest.
         </p>
         <SearchBar placeholder={"Search Research Interests"} onSearchChange={setSearchQuery} onButtonClick={() => {
           getLDAResultsFromSearchQuery(searchQuery)
