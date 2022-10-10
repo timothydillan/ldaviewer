@@ -85,8 +85,6 @@ const lineoptions = {
   }
 };
 
-const labels = ['January', 'February', 'March', 'April', 'May', 'June', 'July'];
-
 function makeColor(colorNum, colors) {
   if (colors < 1) colors = 1;
   // defaults to one color - avoid divide by zero
@@ -237,6 +235,9 @@ export default function Home() {
   const [snackbarMessage, setSnackbarMessage] = React.useState("");
 
   async function getSearchResultsHistory() {
+    // Set loading state.
+    setLoadingState(true)
+
     // Send the form data to our API and get a response.
     const response = await fetch('https://128.199.138.126/search_results', {
       // The method is POST because we are sending data.
@@ -244,10 +245,11 @@ export default function Home() {
     }).then(res => {
       return res
     }).catch(err => {
-      console.log("caught the error", err)
       showSnackbarMessage("Got an error from the server", "error")
       return
     })
+
+    setLoadingState(false)
 
     if (typeof response === "undefined") {
       return
@@ -266,6 +268,9 @@ export default function Home() {
   }
 
   async function viewSpecificSearchResult(id, divide_n = null) {
+    // Set loading state.
+    setLoadingState(true)
+
     let url = `https://128.199.138.126/search_result/${id}`
     if (divide_n != null) {
       url += `?divide_n=${divide_n}`
@@ -277,10 +282,11 @@ export default function Home() {
     }).then(res => {
       return res
     }).catch(err => {
-      console.log("caught the error", err)
       showSnackbarMessage("Got an error from the server", "error")
       return
     })
+
+    setLoadingState(false)
 
     if (typeof response === "undefined") {
       return
@@ -361,9 +367,7 @@ export default function Home() {
     }).then(res => {
       return res
     }).catch(err => {
-      console.log("caught the error", err)
       setLoadingState(false);
-      alert("Got an error from the server:", err)
       return
     })
 
@@ -415,7 +419,6 @@ export default function Home() {
       // On autofill we get a stringified value.
       typeof value === 'string' ? value.split(',') : value,
     );
-    console.log(selectedAcademicDatabases)
   };
 
   const handleSnackbarClose = (event, reason) => {
@@ -554,9 +557,9 @@ export default function Home() {
           </>}
         {scrapedData != null &&
           <>
-          <Typography variant="h3" mt={2}>LDA results for <strong>{currentSearchQuery}</strong></Typography>
+            <Typography variant="h3" mt={2}>LDA results for <strong>{currentSearchQuery}</strong></Typography>
             <Box>
-            <Typography variant="h5" mt={2} textAlign={"center"}>Overall Topic Distribution</Typography>
+              <Typography variant="h5" mt={2} textAlign={"center"}>Overall Topic Distribution</Typography>
               <CirclePacking
                 {...commonProperties}
                 margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
@@ -574,7 +577,6 @@ export default function Home() {
                 onClick={node => {
                   setZoomedId(zoomedId === node.id ? null : node.id)
                   setZoomedDepth(node.depth)
-                  console.log(node)
                 }}
               />
             </Box>
