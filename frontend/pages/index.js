@@ -245,11 +245,10 @@ export default function Home() {
     }).then(res => {
       return res
     }).catch(err => {
+      setLoadingState(false)
       showSnackbarMessage("Got an error from the server", "error")
       return
     })
-
-    setLoadingState(false)
 
     if (typeof response === "undefined") {
       return
@@ -257,6 +256,8 @@ export default function Home() {
     // Get the response data from server as JSON.
     // If server returns the name submitted, that means the form works.
     const result = await response.json()
+
+    setLoadingState(false)
 
     if (result.status != "success") {
       showSnackbarMessage("Got an error from the server", "error")
@@ -282,11 +283,10 @@ export default function Home() {
     }).then(res => {
       return res
     }).catch(err => {
+      setLoadingState(false)
       showSnackbarMessage("Got an error from the server", "error")
       return
     })
-
-    setLoadingState(false)
 
     if (typeof response === "undefined") {
       return
@@ -295,6 +295,8 @@ export default function Home() {
     // Get the response data from server as JSON.
     // If server returns the name submitted, that means the form works.
     const result = await response.json()
+
+    setLoadingState(false)
 
     if (result.status != "success") {
       // alert("Got an error:", result.message)
