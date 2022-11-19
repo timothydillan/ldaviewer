@@ -121,7 +121,7 @@ function parseExractedTopicsAndWeightsResponse(search_query, response) {
   }
   let seen_name_freq = {}
   for (const topic in response) {
-    let main_keyphrase = response[topic].main_keyphrase;
+    let main_keyphrase = `${response[topic].main_keyphrase} - Total Documents: ${response[topic].doc_frequency}`;
     if (main_keyphrase in seen_name_freq) {
       seen_name_freq[main_keyphrase] += 1
       main_keyphrase += `_${seen_name_freq[main_keyphrase]}`
