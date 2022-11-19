@@ -64,8 +64,18 @@ def get_academic_corpus_by_search(search: models.AcademicPaperSearch):
             'limit': search.arxiv_search.limit
         }
 
+    if search.garuda_search:
+        garuda_db = abstractscraper.Garuda()
+        thread_map[garuda_db.get_data_from_query] = {
+            'search_query': search.emerald_search.search_query,
+            'start_year': search.emerald_search.from_year,
+            'end_year': search.emerald_search.to_year,
+            'limit': search.emerald_search.limit
+        }
+
     with ThreadPoolExecutor() as executor:
-        futures = [executor.submit(db, **kwargs) for db, kwargs in thread_map.items()]
+        futures = [executor.submit(db, **kwargs)
+                   for db, kwargs in thread_map.items()]
 
     for future in as_completed(futures):
         corpus_dict = future.result()

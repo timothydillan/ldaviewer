@@ -768,9 +768,177 @@ class ScienceOpen:
         return data
 
 
+class Garuda:
+    # API-related constants.
+    HOST = "https://garuda.kemdikbud.go.id/"
+    SEACRH_PATH = "documents"
+
+    # Query constants
+    QUERY_KEY = "q"
+    ADVANCED_KEY = "advanced"
+    FROM_YEAR_KEY = "from"
+    TO_YEAR_KEY = "to"
+    PAGE_KEY = "page"
+
+    # Content type constants
+    CONTENT_TYPE_KEY = "select"
+
+    # Fields to search constants
+    ABSTRACT_FIELD = "abstract"
+
+    # Important elements to look for
+    ABSTRACT_CLASS_NAME = "abstract-article"
+    PUBLICATION_DATE_CLASS_NAME = "subtitle-article"
+    XMP_TAG_NAME = "xmp"
+
+    MAX_DEFAULT_LIMIT = 100
+
+    def get_data_from_query(self, search_query, limit=MAX_DEFAULT_LIMIT, start_year=None, end_year=None):
+        if len(search_query) <= 0:
+            print("Cannot search with empty query.")
+            return
+
+        data = {"abstract": [], "published_date": []}
+        p = 1
+        total_pages = 0
+        while True:
+            if len(data["abstract"]) >= limit:
+                break
+
+            options = Options()
+            options.headless = True
+            ua = UserAgent()
+            user_agent = ua.random
+            options.add_argument(f'user-agent={user_agent}')
+            driver = webdriver.Chrome(service=Service(
+                ChromeDriverManager().install()), options=options)
+
+            payload = {
+                self.QUERY_KEY: search_query,
+                self.CONTENT_TYPE_KEY: self.ABSTRACT_FIELD
+            }
+
+            if start_year:
+                payload[self.FROM_YEAR_KEY] = start_year
+
+            if end_year:
+                payload[self.TO_YEAR_KEY] = end_year
+
+            if p > 1:
+                payload[self.PAGE_KEY] = p
+
+            url = f"{self.HOST}{self.SEACRH_PATH}?{urlencode(payload)}"
+            print(url)
+
+            driver.get(url)
+            driver.implicitly_wait(10)
+
+            element_present = EC.presence_of_element_located(
+                (By.CLASS_NAME, 'content'))
+            try:
+                WebDriverWait(driver, 10).until(element_present)
+            except:
+                print("Failed to load articles in the predetermined timeout.")
+                driver.close()
+                break
+
+            html_data = driver.page_source.encode('utf-8')
+
+            if total_pages <= 0:
+                total_pages = self.__get_num_of_pages(html_data)
+            retrieved_data = self.__get_data_from_source(html_data)
+
+            data["abstract"].extend(retrieved_data["abstract"])
+            data["published_date"].extend(retrieved_data["published_date"])
+
+            driver.close()
+
+            if p >= total_pages:
+                break
+
+            p += 1
+
+        # Truncate results to match limit.
+        data[const.ABSTRACT_DICTIONARY_KEY] = data[const.ABSTRACT_DICTIONARY_KEY][:limit]
+        data[const.PUBLISHED_DATE_DICTIONARY_KEY] = data[const.PUBLISHED_DATE_DICTIONARY_KEY][:limit]
+        data[const.SOURCE_DICTIONARY_KEY] = [const.GARUDA_DATABASE_NAME for _ in range(
+            len(data[const.ABSTRACT_DICTIONARY_KEY]))]
+
+        return data
+
+    def __get_num_of_pages(self, data):
+        soup = BeautifulSoup(data, "html.parser")
+
+        data = {"abstract": [], "published_date": []}
+        search_results_obj = soup.find(
+            'p', class_=re.compile(".*pagination-info.*"))
+        if search_results_obj is None:
+            print("Can't find any page numbers.")
+            return data
+
+        # Page 1 of 208 | Total Record : 2073
+        pagination_info = search_results_obj.text
+        # [Page 1, 208 | Total Record : 2073]
+        pagination_info = pagination_info.split("of")
+        # 208 | Total Record : 2073
+        pagination_info = pagination_info[1]
+        # [208, Total Record : 2073]
+        pagination_info = pagination_info.split("|")
+        # 208
+        total_pages = int(pagination_info[0].strip())
+        return total_pages
+
+    def __get_data_from_source(self, data):
+        soup = BeautifulSoup(data, "html.parser")
+
+        data = {"abstract": [], "published_date": []}
+        search_results_obj = soup.find_all(
+            'div', class_=re.compile(f".*article-item.*"))
+        if search_results_obj is None:
+            print("Can't find any abstracts.")
+            return data
+
+        for search_obj in search_results_obj:
+            abstract = ""
+            for abstract_obj in search_obj.find_all('div', class_=re.compile(f".*{self.ABSTRACT_CLASS_NAME}.*")):
+                for p in abstract_obj.find_all(f"{self.XMP_TAG_NAME}"):
+                    abstract += p.text
+
+            # Remove extra spaces
+            abstract = re.sub("  +", " ", abstract)
+            # Remove abstract prefix
+            abstract = abstract.lstrip("Abstract")
+            if len(abstract.strip()) <= 1:
+                print("Skipped because abstract empty")
+                continue
+
+            publication_date = ""
+            for publication_objs in search_obj.find_all('xmp', class_=re.compile(f".*{self.PUBLICATION_DATE_CLASS_NAME}.*")):
+                for publication_obj in publication_objs:
+                    publication_date += publication_obj.text
+
+            if len(publication_date.strip()) <= 1:
+                continue
+
+            years = re.findall('\d{4}', publication_date)
+            if len(years) <= 0:
+                print("Skipped because years empty")
+                continue
+
+            publication_year = datetime.datetime.strptime(
+                f"{years[0]}-12-31 23:59:59", '%Y-%m-%d %H:%M:%S')
+            data["abstract"].append(abstract)
+            data["published_date"].append(publication_year)
+
+        return data
+
+
 def main():
-    scienceopen_db = ScienceOpen()
-    scienceopen_db.get_data_from_query("text recognition")
+    garuda_db = Garuda()
+    print(garuda_db.get_data_from_query("text recognition"))
+
+    # scienceopen_db = ScienceOpen()
+    # scienceopen_db.get_data_from_query("text recognition")
 
     # arxiv_db = Arxiv()
     # arxiv_db.get_data_from_query("image recognition", arxiv.SortCriterion.SubmittedDate, filter_by_date=True, start_date="2022-01-01", end_date="2022-08-30", save_to_csv=True)

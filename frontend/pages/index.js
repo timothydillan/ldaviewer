@@ -201,7 +201,7 @@ function parseTopicsOverTimeChartJSResponse(response) {
 }
 
 export default function Home() {
-  const academicDatabases = ["CORE", "arXiv", "Emerald", "ScienceOpen"]
+  const academicDatabases = ["CORE", "arXiv", "Emerald", "ScienceOpen", "Garuda"]
   const minDistance = 0;
   const currentYear = new Date().getFullYear();
   const theme = useTheme();
@@ -347,6 +347,10 @@ export default function Home() {
           limit: 100,
         },
         scienceopen_search: {
+          search_query: searchQuery,
+          limit: 100,
+        },
+        garuda_search: {
           search_query: searchQuery,
           limit: 100,
         },

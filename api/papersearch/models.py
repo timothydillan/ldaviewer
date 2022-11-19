@@ -22,10 +22,11 @@ class AcademicPaperSearch(BaseModel):
     arxiv_search: Optional[AbstractPaperSearch] = None
     emerald_search: Optional[AbstractPaperSearch] = None
     scienceopen_search: Optional[AbstractPaperSearch] = None
+    garuda_search: Optional[AbstractPaperSearch] = None
 
     def is_search_query_empty(self) -> bool:
-        return self.core_search is None and self.arxiv_search is None and self.emerald_search is None and self.scienceopen_search is None
-    
+        return self.core_search is None and self.arxiv_search is None and self.emerald_search is None and self.scienceopen_search is None and self.garuda_search is None
+
     def get_search_query(self):
         if self.core_search:
             return self.core_search.search_query
@@ -35,4 +36,6 @@ class AcademicPaperSearch(BaseModel):
             return self.emerald_search.search_query
         if self.scienceopen_search:
             return self.scienceopen_search.search_query
+        if self.garuda_search:
+            return self.garuda_search.search_query
         return ""
