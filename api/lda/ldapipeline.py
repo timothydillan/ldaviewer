@@ -398,8 +398,8 @@ class LDAModel:
         # assigned_topics = np.split(c,np.searchsorted(r,range(1, lda_output.shape[0])))
         assigned_topics = np.argmax(
             self.get_model().transform(self.training_data), axis=1)
-        df = pd.DataFrame.from_dict(
-            {"documents": self.corpus_dict["abstract"], "assigned_topic": assigned_topics, "timestamp": self.corpus_dict["published_date"]})
+        df = pd.DataFrame.from_dict({"documents": self.corpus_dict["abstract"], "source": self.corpus_dict["source"],
+                                    "assigned_topic": assigned_topics, "timestamp": self.corpus_dict["published_date"]})
         df["timestamp"] = df["timestamp"].apply(lambda x: dateparser.parse(
             x, ignoretz=True, fuzzy=True) if not isinstance(x, datetime) else x)
         df["timestamp"] = df["timestamp"].apply(
@@ -414,7 +414,8 @@ class LDAModel:
 
 class LDALabeler:
     def __init__(self, verbose=False):
-        self.keybert_model = KeyBERT()
+        self.keybert_model = KeyBERT(
+            model="paraphrase-multilingual-MiniLM-L12-v2")
         self.verbose = verbose
         # Initialize ConceptNet database
         # conceptnet_lite.connect(
@@ -581,7 +582,8 @@ class LDALabeler:
                 for keyphrase_and_weight in keyphrases_and_weights:
                     keyphrase = keyphrase_and_weight[0]
                     weight = keyphrase_and_weight[1]
-                    futures.append(executor.submit(self.get_filtered_keyphrase_topic_index, topic_index, keyphrase, weight))
+                    futures.append(executor.submit(
+                        self.get_filtered_keyphrase_topic_index, topic_index, keyphrase, weight))
 
         for future in as_completed(futures):
             filtered_topic_keyphrase_and_weight = future.result()
@@ -589,13 +591,15 @@ class LDALabeler:
                 topic_index = filtered_topic_keyphrase_and_weight[0]
                 keyphrase = filtered_topic_keyphrase_and_weight[1][0]
                 weight = filtered_topic_keyphrase_and_weight[1][1]
-                filtered_keyphrases[topic_index].append((keyphrase.capitalize(), weight))
+                filtered_keyphrases[topic_index].append(
+                    (keyphrase.capitalize(), weight))
 
         for topic_index, keyphrases_and_weights in self.topic_keyphrases.items():
             # If the filtration resulted in 0 results, then fallback to default keyphrases and weights.
             if len(filtered_keyphrases[topic_index]) <= 0:
                 if self.verbose:
-                    print(f"No concepts were found for all the keyphrases provided in topic {topic_index}. Returning the provided keyphrases instead.")
+                    print(
+                        f"No concepts were found for all the keyphrases provided in topic {topic_index}. Returning the provided keyphrases instead.")
                 filtered_keyphrases[topic_index] = keyphrases_and_weights
 
         self.topic_keyphrases = filtered_keyphrases

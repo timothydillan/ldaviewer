@@ -202,6 +202,7 @@ function parseTopicsOverTimeChartJSResponse(response) {
 
 export default function Home() {
   const academicDatabases = ["CORE", "arXiv", "Emerald", "ScienceOpen", "Garuda"]
+  const apiHost = "https://ldaviewerbackend.org"
   const minDistance = 0;
   const currentYear = new Date().getFullYear();
   const theme = useTheme();
@@ -239,7 +240,7 @@ export default function Home() {
     setLoadingState(true)
 
     // Send the form data to our API and get a response.
-    const response = await fetch('https://ldaviewerbackend.org/search_results', {
+    const response = await fetch(`${apiHost}/search_results`, {
       // The method is POST because we are sending data.
       method: 'GET',
     }).then(res => {
@@ -360,7 +361,7 @@ export default function Home() {
     const JSONdata = JSON.stringify(data)
 
     // Send the form data to our API and get a response.
-    const response = await fetch('https://ldaviewerbackend.org/search', {
+    const response = await fetch(`${apiHost}/search`, {
       // Body of the request is the JSON data we created above.
       body: JSONdata,
 
@@ -620,7 +621,7 @@ export default function Home() {
               {scrapedData.metadata.document_details.map((details) => {
                 return (
                   <>
-                    <Typography variant="body2">Database: {details.database_name} {details.documents_retrieved} docs</Typography>
+                    <Typography variant="body2">Database: {details.database_name} {details.documents_retrieved} documents</Typography>
                     {/* <Typography variant="body2">Database: {details.database_name}</Typography>
                     // <Typography variant="body2">Documents Retrieved: {details.documents_retrieved}</Typography> */}
                   </>
@@ -629,6 +630,9 @@ export default function Home() {
               <Typography variant="subtitle2">Number of Topics: {scrapedData.metadata.num_of_topics}</Typography>
               <Typography variant="subtitle2">Coherence Score: {scrapedData.metadata.coherence_score}</Typography>
               <Typography variant="subtitle2">Process Time: {scrapedData.metadata.process_time} minutes</Typography>
+              <Button href={`${apiHost}/get_processed_documents/${scrapedData.id}`} variant="contained">
+                Download Processed Documents in CSV
+              </Button>
             </Box>
           </>
         }

@@ -170,6 +170,16 @@ def parse_lda_json_trend_response(json_keyphrase_per_topic, lda_output, interval
     return topic_frequencies_over_time
 
 
+def set_assigned_topics_lda_output(extracted_keyphrase_per_topic, lda_output):
+    for topic_index, keyphrases_and_weights in extracted_keyphrase_per_topic.items():
+        actual_topic_index = int(''.join(filter(str.isdigit, topic_index)))
+        lda_output.loc[lda_output["assigned_topic"] == actual_topic_index,
+                       "main_topic"] = keyphrases_and_weights["main_keyphrase"]
+        lda_output.loc[lda_output["assigned_topic"] == actual_topic_index, "sub_keyphrases"] = ", ".join(
+            [keyphrase["name"] for keyphrase in sorted(keyphrases_and_weights["keyphrases"], key=lambda x: x["weight"], reverse=True)])
+    return lda_output
+
+
 def get_n_contiguous_interval_date(start, end, interval=5):
     dates = []
     diff = (end - start) / interval

@@ -1,4 +1,5 @@
 import json
+import pandas as pd
 from time import time
 from typing import Union, Optional
 from fastapi import FastAPI, Path, Query, Response, status
@@ -9,6 +10,8 @@ import papersearch.models as papersearch_models
 import papersearch.service as papersearch_service
 import lda.service as lda_service
 import database.service as database_service
+from fastapi.responses import StreamingResponse
+import io
 
 # Run with uvicron filename:instancename --reload (--reload for hotreload)
 app = FastAPI()
@@ -109,3 +112,26 @@ async def get_specific_search_result(id: int, divide_n: Optional[int] = None, re
             result["extracted_topics_over_time"])
 
     return {"status": "success", "result": result}
+
+
+@app.get("/get_processed_documents/{id}")
+async def get_processed_documents(id: int):
+    try:
+        # Store results to db before returning response
+        result = database_service.get_specific_search_result(id)
+    except Exception as e:
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return {"status": "error", "message": repr(e)}
+
+    lda_dataframe_output = pd.read_json(result["document_df"])
+    try:
+        lda_dataframe_output = lda_service.set_assigned_topics_lda_output(
+            json.loads(result["extracted_topics_and_weights"]), lda_dataframe_output)
+    except Exception as e:
+        response.status_code = status.HTTP_500_INTERNAL_SERVER_ERROR
+        return {"status": "error", "message": repr(e)}
+
+    response = StreamingResponse(io.StringIO(
+        lda_dataframe_output.to_csv(index=False)), media_type="text/csv")
+    response.headers["Content-Disposition"] = f"attachment; filename={result['search_query']}-{result['create_time']}.csv"
+    return response
