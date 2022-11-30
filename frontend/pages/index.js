@@ -121,7 +121,8 @@ function parseExractedTopicsAndWeightsResponse(search_query, response) {
   }
   let seen_name_freq = {}
   for (const topic in response) {
-    let main_keyphrase = `${response[topic].main_keyphrase} - Total Documents: ${response[topic].doc_frequency}`;
+    // let main_keyphrase = `${response[topic].main_keyphrase} \n Total Documents: ${response[topic].doc_frequency}`;
+    let main_keyphrase = `${response[topic].main_keyphrase}`;
     if (main_keyphrase in seen_name_freq) {
       seen_name_freq[main_keyphrase] += 1
       main_keyphrase += `_${seen_name_freq[main_keyphrase]}`
@@ -465,7 +466,7 @@ export default function Home() {
           {snackbarMessage}
         </Alert>
       </Snackbar>
-      <BackdropProgress open={loadingState}></BackdropProgress>
+      <BackdropProgress open={loadingState} message={"Please wait.. Due to the processes running in the background, the processing of queries would usually take around 4 minutes, and would scale linearly with the number of papers to be processed. Please be patient!"}></BackdropProgress>
       <main>
         <h1 className="title">
           Welcome to <Link href="#">LDAViewer!</Link>
@@ -473,6 +474,9 @@ export default function Home() {
         <p className="description">
           Get started by searching your topic of interest.
         </p>
+        <Typography align="center" marginLeft={10} marginRight={10} marginBottom={5}>
+          <strong>Disclaimer: Due to the processes running in the background, the processing of queries would usually take around 4 minutes, and would scale linearly with the number of papers to be processed. Please be patient!</strong>
+        </Typography>
         <SearchBar placeholder={"Search Research Interests"} onSearchChange={setSearchQuery} onButtonClick={() => {
           getLDAResultsFromSearchQuery(searchQuery)
         }} onMenuClick={() => {
