@@ -202,8 +202,8 @@ function parseTopicsOverTimeChartJSResponse(response) {
 }
 
 export default function Home() {
-  // const academicDatabases = ["CORE", "arXiv", "Emerald", "ScienceOpen", "Garuda"]
-  const academicDatabases = ["CORE", "arXiv", "Emerald", "ScienceOpen"]
+  const academicDatabases = ["CORE", "arXiv", "Emerald", "ScienceOpen", "Garuda"]
+  // const academicDatabases = ["CORE", "arXiv", "Emerald", "ScienceOpen"]
   const apiHost = "https://ldaviewerbackend.org"
   const minDistance = 0;
   const currentYear = new Date().getFullYear();
