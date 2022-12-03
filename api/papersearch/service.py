@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 def get_academic_corpus_by_search(search: models.AcademicPaperSearch):
     thread_map = {}
     extracted_corpus = {
+        const.TITLE_DICTIONARY_KEY: [],
         const.ABSTRACT_DICTIONARY_KEY: [],
         const.PUBLISHED_DATE_DICTIONARY_KEY: [],
         const.SOURCE_DICTIONARY_KEY: []
@@ -79,6 +80,8 @@ def get_academic_corpus_by_search(search: models.AcademicPaperSearch):
 
     for future in as_completed(futures):
         corpus_dict = future.result()
+        extracted_corpus[const.TITLE_DICTIONARY_KEY].extend(
+            corpus_dict[const.TITLE_DICTIONARY_KEY])
         extracted_corpus[const.ABSTRACT_DICTIONARY_KEY].extend(
             corpus_dict[const.ABSTRACT_DICTIONARY_KEY])
         extracted_corpus[const.PUBLISHED_DATE_DICTIONARY_KEY].extend(

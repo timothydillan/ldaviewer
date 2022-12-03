@@ -31,6 +31,8 @@ import numpy as np
 import itertools
 import warnings
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from langdetect import detect
+import stanfordnlp
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=DeprecationWarning)
 
@@ -76,8 +78,14 @@ class Preprocessor:
 
     EN_STOPWORDS = {"".join(list(gensim.utils.tokenize(doc, lower=True)))
                     for doc in nltk.corpus.stopwords.words('english')}
+    INDO_STOPWORDS = {"".join(list(gensim.utils.tokenize(doc, lower=True)))
+                      for doc in nltk.corpus.stopwords.words('indonesian')}
+
+    STOPWORDS = EN_STOPWORDS.union(INDO_STOPWORDS)
 
     SPACY_MODEL = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
+    INDONESIAN_MODEL = stanfordnlp.Pipeline(
+        lang='id', processors='tokenize,pos')
 
     def __init__(self, corpus):
         self.corpus = corpus
@@ -105,12 +113,25 @@ class Preprocessor:
         self.__validate_corpus_tokenized()
         lemmatized_tokens = []
         for tokens in self.tokenized_corpus:
-            doc = self.SPACY_MODEL(" ".join(tokens))
-            if len(allowed_postags) > 0:
-                lemmatized_tokens.append(
-                    [token.lemma_ for token in doc if token.pos_ in allowed_postags])
+            docs = " ".join(tokens)
+            lang = detect(docs)
+            if lang == "id":
+                indo_doc = self.INDONESIAN_MODEL(docs)
+                for docs in indo_doc.sentences:
+                    # if len(allowed_postags) > 0:
+                    #     lemmatized_tokens.append(
+                    #         [word.lemma for word in docs.words if word.upos in allowed_postags])
+                    # else:
+                    lemmatized_tokens.append(
+                        [word.text for word in docs.words])
             else:
-                lemmatized_tokens.append([token.lemma_ for token in doc])
+                doc = self.SPACY_MODEL(" ".join(tokens))
+                if len(allowed_postags) > 0:
+                    lemmatized_tokens.append(
+                        [token.lemma_ for token in doc if token.pos_ in allowed_postags])
+                else:
+                    lemmatized_tokens.append([token.lemma_ for token in doc])
+
         self.tokenized_corpus = lemmatized_tokens
 
     # Remove stopwords from tokens.
@@ -118,7 +139,7 @@ class Preprocessor:
         self.__validate_corpus_tokenized()
         no_stopwords_tokens = []
         for tokens in self.tokenized_corpus:
-            tokens = [token for token in tokens if token not in self.EN_STOPWORDS]
+            tokens = [token for token in tokens if token not in self.STOPWORDS]
             no_stopwords_tokens.append(tokens)
         self.tokenized_corpus = no_stopwords_tokens
 
@@ -127,7 +148,10 @@ class Preprocessor:
         self.__validate_corpus_tokenized()
         preprocessed_corpus = []
         for tokens in self.tokenized_corpus:
-            preprocessed_corpus.append(" ".join(token for token in tokens))
+            try:
+                preprocessed_corpus.append(" ".join(token for token in tokens))
+            except:
+                print(tokens)
         return preprocessed_corpus
 
 
@@ -143,10 +167,47 @@ CHUNK:
 
     def __init__(self):
         self.vectorizer = None
+        self.indonesian_pipeline = stanfordnlp.Pipeline(
+            lang='id', processors='tokenize,pos')
+        self.en_pipeline = spacy.load(
+            'en_core_web_sm', disable=['parser', 'ner'])
+
+    # define custom POS-tagger function using flair
+    def custom_pos_tagger(self, raw_documents):
+        """
+        Important: 
+
+        The mandatory 'raw_documents' parameter can NOT be named differently and has to expect a list of strings. 
+        Any other parameter of the custom POS-tagger function can be arbitrarily defined, depending on the respective use case. 
+        Furthermore the function has to return a list of (word token, POS-tag) tuples.
+        """
+
+        # split texts into sentences
+        sentences = []
+        for doc in raw_documents:
+            lang = detect(doc)
+            sentences.append((doc, lang))
+
+        pos_tags = []
+        words = []
+        for sentence in sentences:
+            if sentence[1] == "id":
+                indo_doc = self.indonesian_pipeline(sentence[0].lower())
+                for docs in indo_doc.sentences:
+                    for word in docs.words:
+                        words.append(word.text)
+                        pos_tags.append(word.xpos)
+            else:
+                doc = self.en_pipeline(sentence[0])
+                for token in doc:
+                    words.append(token.text)
+                    pos_tags.append(token.tag_)
+
+        return list(zip(words, pos_tags))
 
     def fit(self, corpus):
         self.vectorizer = KeyphraseCountVectorizer(max_df=int(len(
-            corpus)*self.MAX_DOCUMENT_FREQUENCY_RATIO), pos_pattern=self.KEYPHRASE_POS_PATTERN).fit(corpus)
+            corpus)*self.MAX_DOCUMENT_FREQUENCY_RATIO), custom_pos_tagger=self.custom_pos_tagger, stop_words=list(Preprocessor.STOPWORDS), pos_pattern=TextVectorization.KEYPHRASE_POS_PATTERN).fit(corpus)
         return self
 
     def transform(self, corpus):
@@ -378,6 +439,8 @@ class LDAModel:
                 self.vectorizer.get_feature_names_out(), component)
             sorted_words = sorted(
                 vocab_comp, key=lambda x: x[1], reverse=True)[:top_n]
+            if sorted_words in topic_word_map.values():
+                continue
             topic_word_map[topic_index] = sorted_words
             if self.verbose:
                 print(f"Topic {topic_index}:")
@@ -393,17 +456,21 @@ class LDAModel:
         # standardize array values
         self.corpus_dict["published_date"] = self.corpus_dict["published_date"][:len(
             self.corpus_dict["abstract"])]
+        self.corpus_dict["title"] = self.corpus_dict["title"][:len(
+            self.corpus_dict["abstract"])]
         # lda_output = self.get_model().transform(self.training_data)
         # r, c = np.where(lda_output >= 0.5)
         # assigned_topics = np.split(c,np.searchsorted(r,range(1, lda_output.shape[0])))
         assigned_topics = np.argmax(
             self.get_model().transform(self.training_data), axis=1)
-        df = pd.DataFrame.from_dict({"documents": self.corpus_dict["abstract"], "source": self.corpus_dict["source"],
+        df = pd.DataFrame.from_dict({"title": self.corpus_dict["title"], "documents": self.corpus_dict["abstract"], "source": self.corpus_dict["source"],
                                     "assigned_topic": assigned_topics, "timestamp": self.corpus_dict["published_date"]})
         df["timestamp"] = df["timestamp"].apply(lambda x: dateparser.parse(
             x, ignoretz=True, fuzzy=True) if not isinstance(x, datetime) else x)
         df["timestamp"] = df["timestamp"].apply(
             lambda x: x.replace(tzinfo=None))
+        df["published_date"] = df["timestamp"].apply(
+            lambda x: x.strftime("%Y-%m-%d %H:%M:%S"))
         if save_to_csv:
             df.to_csv("model_output.csv")
         return df
@@ -434,8 +501,12 @@ class LDALabeler:
     def extract_keywords_from_topics(self):
         keybert_topic_keypharses = {}
         for topic_index, keyphrases_and_weights in self.topic_keyphrases.items():
-            keybert_topic_keypharses[topic_index] = self.keybert_model.extract_keywords(" ".join(
-                [i[0] for i in keyphrases_and_weights]), top_n=10, vectorizer=KeyphraseCountVectorizer(pos_pattern=TextVectorization.KEYPHRASE_POS_PATTERN))
+            # TODO: detect language, use indo model if joined text is indo
+            # also use custom pos tagger for keyphrasevectorizer if text is indo using stanfordnlp. read keyphrasevectorizer doc
+            candidate_words = " ".join([i[0] for i in keyphrases_and_weights])
+            textVectorization = TextVectorization()
+            keybert_topic_keypharses[topic_index] = self.keybert_model.extract_keywords(
+                candidate_words, top_n=10, vectorizer=KeyphraseCountVectorizer(custom_pos_tagger=textVectorization.custom_pos_tagger, stop_words=list(Preprocessor.STOPWORDS), pos_pattern=TextVectorization.KEYPHRASE_POS_PATTERN))
         if self.verbose:
             print("Extracted keyphrases:", self.topic_keyphrases)
         self.topic_keyphrases = keybert_topic_keypharses
@@ -504,6 +575,12 @@ class LDALabeler:
                 keyphrase = keyphrase_and_weight[0]
                 weight = keyphrase_and_weight[1]
 
+                lang = detect(keyphrase)
+                if lang != "en":
+                    filtered_keyphrases[topic_index].append(
+                        (keyphrase.capitalize(), weight))
+                    continue
+
                 wikipedia_results = wikipedia.search(
                     keyphrase, results=1, suggestion=False)
                 if len(wikipedia_results) > 0:
@@ -544,6 +621,10 @@ class LDALabeler:
         self.topic_keyphrases = filtered_keyphrases
 
     def get_filtered_keyphrase_topic_index(self, topic_index, keyphrase, weight):
+        lang = detect(keyphrase)
+        if lang != "en":
+            return topic_index, (keyphrase.capitalize(), weight)
+
         wikipedia_results = wikipedia.search(
             keyphrase, results=1, suggestion=False)
         if len(wikipedia_results) > 0:

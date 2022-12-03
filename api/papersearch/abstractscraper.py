@@ -375,6 +375,7 @@ class Emerald:
 
     # Important elements to look for
     ABSTRACT_CLASS_NAME = "intent_abstract"
+    TITLE_CLASS_NAME = "intent_title"
     PUBLICATION_DATE_CLASS_NAME = "intent_publication_date"
     P_TAG_NAME = "p"
 
@@ -393,7 +394,7 @@ class Emerald:
             print("Cannot search with empty query.")
             return
 
-        data = {"abstract": [], "published_date": []}
+        data = {"title": [], "abstract": [], "published_date": []}
         p = 1
         attempt_count = 1
         while True:
@@ -440,6 +441,8 @@ class Emerald:
 
             retrieved_data = self.__get_data_from_source(
                 driver.page_source.encode('utf-8'))
+
+            data["title"].extend(retrieved_data["title"])
             data["abstract"].extend(retrieved_data["abstract"])
             data["published_date"].extend(retrieved_data["published_date"])
 
@@ -473,7 +476,9 @@ class Emerald:
         # Somehow the first record is duplicated/wrong. So we delete it.
         data["abstract"].pop(0)
         data["published_date"].pop(0)
+        data["title"].pop(0)
         # Truncate results to match limit.
+        data["title"] = data["title"][:limit]
         data["abstract"] = data["abstract"][:limit]
         data["published_date"] = data["published_date"][:limit]
         data[const.SOURCE_DICTIONARY_KEY] = [const.EMERALD_DATABASE_NAME for _ in range(
@@ -483,7 +488,7 @@ class Emerald:
     def __get_data_from_source(self, data):
         soup = BeautifulSoup(data, "html.parser")
 
-        data = {"abstract": [], "published_date": []}
+        data = {"title": [], "abstract": [], "published_date": []}
         search_results_obj = soup.find_all(
             'div', class_=re.compile(f".*intent_search_result.*"))
         if search_results_obj is None:
@@ -491,6 +496,10 @@ class Emerald:
             return data
 
         for search_obj in search_results_obj:
+            title = ""
+            for title_obj in search_obj.find_all('span', class_=re.compile(f".*{self.TITLE_CLASS_NAME}.*")):
+                title += title_obj.text
+
             abstract = ""
             for abstract_obj in search_obj.find_all('div', class_=re.compile(f".*{self.ABSTRACT_CLASS_NAME}.*")):
                 for p in abstract_obj.find_all(f"{self.P_TAG_NAME}"):
@@ -510,6 +519,7 @@ class Emerald:
                 continue
 
             publication_date = dateparser.parse(publication_date, fuzzy=True)
+            data["title"].append(title)
             data["abstract"].append(abstract)
             data["published_date"].append(publication_date)
 
@@ -533,7 +543,7 @@ class Arxiv:
     def __is_in_date_range(self, article_timestamp, start_date, end_date):
         return start_date <= article_timestamp.replace(tzinfo=None) <= end_date
 
-    def get_data_from_query(self, search_query, sort_by=arxiv.SortCriterion.Relevance, limit=50, save_to_csv=False, filter_by_date=False, start_date=None, end_date=None):
+    def get_data_from_query(self, search_query, sort_by="relevance", limit=50, save_to_csv=False, filter_by_date=False, start_date=None, end_date=None):
         if len(search_query) <= 0:
             print("Cannot search with empty query.")
             return
@@ -704,7 +714,6 @@ class ScienceOpen:
         # Click load more button.
         num_of_data_retrieved = 0
         while True:
-            print(num_of_data_retrieved)
             if num_of_data_retrieved >= limit:
                 break
             element_present = EC.element_to_be_clickable(
@@ -727,6 +736,7 @@ class ScienceOpen:
         data = self.__get_data_from_source(driver.page_source.encode('utf-8'))
         driver.close()
 
+        data["title"] = data["title"][:limit]
         data["abstract"] = data["abstract"][:limit]
         data["published_date"] = data["published_date"][:limit]
         data[const.SOURCE_DICTIONARY_KEY] = [const.SCIENCEOPEN_DATABASE_NAME for _ in range(
@@ -736,7 +746,7 @@ class ScienceOpen:
     def __get_data_from_source(self, data):
         soup = BeautifulSoup(data, "html.parser")
 
-        data = {"abstract": [], "published_date": []}
+        data = {"title": [], "abstract": [], "published_date": []}
         abstractsObj = soup.find_all(
             'div', class_=re.compile(f".*so-article-list-item-text.*"))
         if abstractsObj is None:
@@ -744,6 +754,10 @@ class ScienceOpen:
             return data
 
         for abstractObjs2 in abstractsObj:
+            title = ""
+            for title_obj in abstractObjs2.find_all('h3', class_=re.compile(".*so-article-list-item-title.*")):
+                title += title_obj.text
+
             abstract = ""
             for abstract_obj in abstractObjs2.find_all('div', class_=re.compile(".*so-d.*")):
                 abstract += abstract_obj.text
@@ -761,6 +775,7 @@ class ScienceOpen:
                     except:
                         continue
 
+            data["title"].append(title)
             data["abstract"].append(abstract)
             data["published_date"].append(datetime.datetime(
                 year=publication_year, month=12, day=31, hour=23, minute=59, second=59))
@@ -787,6 +802,7 @@ class Garuda:
     ABSTRACT_FIELD = "abstract"
 
     # Important elements to look for
+    TITLE_CLASS_NAME = "title-article"
     ABSTRACT_CLASS_NAME = "abstract-article"
     PUBLICATION_DATE_CLASS_NAME = "subtitle-article"
     XMP_TAG_NAME = "xmp"
@@ -798,7 +814,7 @@ class Garuda:
             print("Cannot search with empty query.")
             return
 
-        data = {"abstract": [], "published_date": []}
+        data = {"title": [], "abstract": [], "published_date": []}
         p = 1
         total_pages = 0
         while True:
@@ -848,6 +864,7 @@ class Garuda:
                 total_pages = self.__get_num_of_pages(html_data)
             retrieved_data = self.__get_data_from_source(html_data)
 
+            data["title"].extend(retrieved_data["title"])
             data["abstract"].extend(retrieved_data["abstract"])
             data["published_date"].extend(retrieved_data["published_date"])
 
@@ -859,6 +876,7 @@ class Garuda:
             p += 1
 
         # Truncate results to match limit.
+        data[const.TITLE_DICTIONARY_KEY] = data[const.TITLE_DICTIONARY_KEY][:limit]
         data[const.ABSTRACT_DICTIONARY_KEY] = data[const.ABSTRACT_DICTIONARY_KEY][:limit]
         data[const.PUBLISHED_DATE_DICTIONARY_KEY] = data[const.PUBLISHED_DATE_DICTIONARY_KEY][:limit]
         data[const.SOURCE_DICTIONARY_KEY] = [const.GARUDA_DATABASE_NAME for _ in range(
@@ -891,7 +909,7 @@ class Garuda:
     def __get_data_from_source(self, data):
         soup = BeautifulSoup(data, "html.parser")
 
-        data = {"abstract": [], "published_date": []}
+        data = {"title": [], "abstract": [], "published_date": []}
         search_results_obj = soup.find_all(
             'div', class_=re.compile(f".*article-item.*"))
         if search_results_obj is None:
@@ -899,6 +917,11 @@ class Garuda:
             return data
 
         for search_obj in search_results_obj:
+            title = ""
+            for title_obj in search_obj.find_all('a', class_=re.compile(f".*{self.TITLE_CLASS_NAME}.*")):
+                for p in title_obj.find_all(f"{self.XMP_TAG_NAME}"):
+                    title += p.text
+
             abstract = ""
             for abstract_obj in search_obj.find_all('div', class_=re.compile(f".*{self.ABSTRACT_CLASS_NAME}.*")):
                 for p in abstract_obj.find_all(f"{self.XMP_TAG_NAME}"):
@@ -927,6 +950,8 @@ class Garuda:
 
             publication_year = datetime.datetime.strptime(
                 f"{years[0]}-12-31 23:59:59", '%Y-%m-%d %H:%M:%S')
+
+            data["title"].append(title)
             data["abstract"].append(abstract)
             data["published_date"].append(publication_year)
 
@@ -934,25 +959,25 @@ class Garuda:
 
 
 def main():
-    garuda_db = Garuda()
-    print(garuda_db.get_data_from_query("text recognition"))
+    pass
+    # garuda_db = Garuda()
+    # print(garuda_db.get_data_from_query("text recognition", limit=10))
 
     # scienceopen_db = ScienceOpen()
-    # scienceopen_db.get_data_from_query("text recognition")
+    # print(scienceopen_db.get_data_from_query("text recognition", limit=10))
 
     # arxiv_db = Arxiv()
-    # arxiv_db.get_data_from_query("image recognition", arxiv.SortCriterion.SubmittedDate, filter_by_date=True, start_date="2022-01-01", end_date="2022-08-30", save_to_csv=True)
+    # print(arxiv_db.get_data_from_query("image recognition", limit=10))
 
     # emerald_db = Emerald()
-    # abstracts = emerald_db.get_data_from_query('competitive advantage')
-    # print(len(abstracts))
+    # abstracts = emerald_db.get_data_from_query(
+    #     'competitive advantage', limit=10)
+    # print(abstracts)
 
     # core_database = CORE()
-    # works = core_database.get_works_by_search_query(""""image recognition" AND fieldsOfStudy:"computer science" AND documentType:"research" AND (yearPublished>=2010 AND yearPublished<=2022)""", 50)
-    # if works is not None:
-    #     abstracts = core_database.get_fulltext_from_works(save_to_csv=True)
-    #     print(abstracts)
-    pass
+    # works = core_database.get_data_from_query(
+    #     """"image recognition" AND fieldsOfStudy:"computer science" AND documentType:"research" AND (yearPublished>=2010 AND yearPublished<=2022)""", 10)
+    # print(works)
 
 
 if __name__ == "__main__":
