@@ -353,12 +353,14 @@ export default function Home() {
           search_query: searchQuery,
           limit: 100,
         },
-        garuda_search: {
-          search_query: searchQuery,
-          limit: 100,
-        },
       }
     }
+    /* 
+    garuda_search: {
+      search_query: searchQuery,
+      limit: 100,
+    },
+    */
 
     const JSONdata = JSON.stringify(data)
 
